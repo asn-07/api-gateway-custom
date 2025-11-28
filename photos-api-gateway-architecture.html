@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Photos API Gateway - Architecture Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: #667eea;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .architecture-diagram {
+            margin: 40px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+
+        .diagram-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.3em;
+            color: #764ba2;
+            margin-bottom: 30px;
+        }
+
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .flow-box {
+            background: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            font-weight: 600;
+            min-width: 300px;
+        }
+
+        .flow-box.client {
+            background: #4CAF50;
+            color: white;
+            border-color: #45a049;
+        }
+
+        .flow-box.gateway {
+            background: #667eea;
+            color: white;
+            border-color: #5568d3;
+        }
+
+        .flow-box.filter {
+            background: #FF9800;
+            color: white;
+            border-color: #e68900;
+        }
+
+        .flow-box.service {
+            background: #2196F3;
+            color: white;
+            border-color: #0b7dda;
+        }
+
+        .arrow {
+            font-size: 24px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .service-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .service-card h4 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            border-bottom: 2px solid white;
+            padding-bottom: 8px;
+        }
+
+        .service-card .port {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+
+        .route-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .route-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .route-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .route-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .route-table tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 12px;
+            margin: 10px 0;
+            background: #f5f7fa;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .feature-list li:before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .tech-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .security-flow {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .security-flow h4 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .security-step {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-left: 4px solid #ffc107;
+            border-radius: 3px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Google Photos API Gateway</h1>
+        <p class="subtitle">Comprehensive Architecture & Technical Documentation</p>
+
+        <div class="architecture-diagram">
+            <div class="diagram-title">System Architecture Flow</div>
+            <div class="flow-diagram">
+                <div class="flow-box client">Client Applications</div>
+                <div class="arrow">↓</div>
+                <div class="flow-box gateway">API Gateway<br>(Port 8080)</div>
+                <div class="arrow">↓</div>
+                <div class="flow-box filter">Security Filters<br>(CORS → Authentication → JWT Validation)</div>
+                <div class="arrow">↓</div>
+                <div class="flow-box filter">Header Injection<br>(User Context Propagation)</div>
+                <div class="arrow">↓</div>
+                <div class="flow-box gateway">Route Matching & Load Balancing</div>
+                <div class="arrow">↓</div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <div class="flow-box service" style="min-width: 200px;">Auth Service</div>
+                    <div class="flow-box service" style="min-width: 200px;">Photos Service</div>
+                    <div class="flow-box service" style="min-width: 200px;">Albums Service</div>
+                    <div class="flow-box service" style="min-width: 200px;">Search Service</div>
+                    <div class="flow-box service" style="min-width: 200px;">Upload Service</div>
+                </div>
+                <div class="arrow">↓</div>
+                <div class="flow-box client">Response to Client</div>
+            </div>
+        </div>
+
+        <h2>📋 Overview</h2>
+        <p>The Google Photos API Gateway is a high-performance, production-ready microservice gateway built on Spring Cloud Gateway and Spring WebFlux. It serves as the single entry point for all client applications, providing centralized authentication, routing, security, and context propagation to downstream microservices.</p>
+
+        <div class="info-box">
+            <strong>Key Architecture Pattern:</strong> API Gateway Pattern with centralized security and reactive programming model for high concurrency and non-blocking I/O operations.
+        </div>
+
+        <h2>🏗️ Core Components</h2>
+
+        <h3>1. Main Application Entry Point</h3>
+        <p><strong>File:</strong> <code>PhotosApiGatewayApplication.java</code></p>
+        <p>Spring Boot application that programmatically defines all routes using RouteLocator bean. Routes are dynamically configured based on environment-specific service URIs.</p>
+
+        <h3>2. Global Authentication Filter</h3>
+        <p><strong>File:</strong> <code>AuthGlobalFilter.java</code></p>
+        <p>Implements centralized JWT-based authentication and authorization for all protected routes. Executes at <code>HIGHEST_PRECEDENCE + 10</code> in the filter chain.</p>
+
+        <div class="security-flow">
+            <h4>Authentication Flow:</h4>
+            <div class="security-step">1. Extract JWT token from Authorization header or query parameter</div>
+            <div class="security-step">2. Validate token signature and expiration (with 300s grace period)</div>
+            <div class="security-step">3. Extract claims: username, role, sessionId</div>
+            <div class="security-step">4. Inject security headers for downstream services</div>
+            <div class="security-step">5. Forward authenticated request or return 401 error</div>
+        </div>
+
+        <h3>3. JWT Utility</h3>
+        <p><strong>File:</strong> <code>JwtUtil.java</code></p>
+        <p>Handles all JWT token operations including parsing, validation, and claims extraction using JJWT library with HMAC SHA256 (HS256) algorithm.</p>
+
+        <h3>4. Configuration Manager</h3>
+        <p><strong>File:</strong> <code>GatewayConfig.java</code></p>
+        <p>Maps YAML configuration properties to Java objects, including public routes list and service URIs.</p>
+
+        <h2>🔐 Security Features</h2>
+
+        <ul class="feature-list">
+            <li><strong>JWT Authentication:</strong> HMAC SHA256 with 256-bit minimum key length</li>
+            <li><strong>Token Validation:</strong> Signature verification and expiration checking with clock skew tolerance</li>
+            <li><strong>Public Routes:</strong> Configurable bypass for authentication endpoints</li>
+            <li><strong>Video Streaming Support:</strong> Token extraction from query parameters for HLS/DASH players</li>
+            <li><strong>Context Propagation:</strong> User identity, role, and session forwarded via custom headers</li>
+            <li><strong>Error Handling:</strong> Standardized JSON error responses with timestamps</li>
+            <li><strong>CORS Support:</strong> Pre-configured for cross-origin requests with TUS protocol headers</li>
+        </ul>
+
+        <div class="warning-box">
+            <strong>Public Routes (Bypass Authentication):</strong>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li><code>/api/auth/admin-sign-up</code></li>
+                <li><code>/api/auth/login</code></li>
+                <li><code>/api/auth/refresh-token</code></li>
+            </ul>
+        </div>
+
+        <h2>🚦 Routing Configuration</h2>
+
+        <table class="route-table">
+            <thead>
+                <tr>
+                    <th>Route ID</th>
+                    <th>Path Patterns</th>
+                    <th>Service</th>
+                    <th>Default Port</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>auth-service</strong></td>
+                    <td><code>/api/auth/**</code></td>
+                    <td>Authentication Service</td>
+                    <td>8081</td>
+                    <td>Public routes available</td>
+                </tr>
+                <tr>
+                    <td><strong>photos-service</strong></td>
+                    <td><code>/api/photos/**</code><br><code>/api/admin/redis/**</code></td>
+                    <td>Photos Service v1</td>
+                    <td>8082</td>
+                    <td>Protected</td>
+                </tr>
+                <tr>
+                    <td><strong>search-service</strong></td>
+                    <td><code>/api/search/**</code></td>
+                    <td>Search Service</td>
+                    <td>8087</td>
+                    <td>Protected</td>
+                </tr>
+                <tr>
+                    <td><strong>albums-service</strong></td>
+                    <td><code>/api/timeline/**</code><br><code>/api/memories/**</code><br><code>/api/albums/**</code></td>
+                    <td>Albums & Timeline Service</td>
+                    <td>8083</td>
+                    <td>Protected</td>
+                </tr>
+                <tr>
+                    <td><strong>contact-service</strong></td>
+                    <td><code>/api/v1/contacts/**</code></td>
+                    <td>External Contact API</td>
+                    <td>HTTPS</td>
+                    <td>Protected</td>
+                </tr>
+                <tr>
+                    <td><strong>upload-service-v2</strong></td>
+                    <td><code>/api/v1/uploads/**</code><br><code>/api/v1/files/**</code></td>
+                    <td>Upload Service v2 (TUS Protocol)</td>
+                    <td>8091</td>
+                    <td>Protected</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🎯 Microservices Architecture</h2>
+
+        <div class="services-grid">
+            <div class="service-card">
+                <h4>Auth Service</h4>
+                <p>User authentication, registration, and token management</p>
+                <div class="port">Port: 8081</div>
+            </div>
+
+            <div class="service-card">
+                <h4>Photos Service v1</h4>
+                <p>Standard photo management and storage operations</p>
+                <div class="port">Port: 8082</div>
+            </div>
+
+            <div class="service-card">
+                <h4>Upload Service v2</h4>
+                <p>Resumable uploads with TUS protocol support and chunking</p>
+                <div class="port">Port: 8091</div>
+            </div>
+
+            <div class="service-card">
+                <h4>Search Service</h4>
+                <p>Photo search, filtering, and discovery features</p>
+                <div class="port">Port: 8087</div>
+            </div>
+
+            <div class="service-card">
+                <h4>Albums & Timeline</h4>
+                <p>Photo organization, albums, memories, and timelines</p>
+                <div class="port">Port: 8083</div>
+            </div>
+
+            <div class="service-card">
+                <h4>Contact Service</h4>
+                <p>External contact API integration</p>
+                <div class="port">HTTPS</div>
+            </div>
+        </div>
+
+        <h2>🔗 Custom Security Headers</h2>
+
+        <p>The gateway injects the following custom headers to propagate user context to downstream services:</p>
+
+        <table class="route-table">
+            <thead>
+                <tr>
+                    <th>Header Name</th>
+                    <th>Source</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>X-User-Id</code></td>
+                    <td>JWT subject claim</td>
+                    <td>User identification</td>
+                </tr>
+                <tr>
+                    <td><code>X-Session-Id</code></td>
+                    <td>JWT sessionId claim</td>
+                    <td>Session tracking</td>
+                </tr>
+                <tr>
+                    <td><code>X-User-Role</code></td>
+                    <td>JWT role claim</td>
+                    <td>Authorization and permissions</td>
+                </tr>
+                <tr>
+                    <td><code>X-Authenticated</code></td>
+                    <td>Filter validation result</td>
+                    <td>Authentication flag</td>
+                </tr>
+                <tr>
+                    <td><code>X-API-Key</code></td>
+                    <td>Environment configuration</td>
+                    <td>Downstream service authentication</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>⚙️ Technology Stack</h2>
+
+        <div class="tech-stack">
+            <div class="tech-badge">Java 21</div>
+            <div class="tech-badge">Spring Boot 3.3.4</div>
+            <div class="tech-badge">Spring Cloud Gateway 2023.0.3</div>
+            <div class="tech-badge">Spring WebFlux (Reactive)</div>
+            <div class="tech-badge">JJWT 0.12.6</div>
+            <div class="tech-badge">Spring Actuator</div>
+            <div class="tech-badge">SpringDoc OpenAPI</div>
+            <div class="tech-badge">Lombok</div>
+            <div class="tech-badge">Maven</div>
+            <div class="tech-badge">Docker</div>
+        </div>
+
+        <h2>🌍 Environment Configurations</h2>
+
+        <h3>Local Development (application-local.yml)</h3>
+        <p>All services run on localhost with default ports. Suitable for local development without Docker.</p>
+
+        <h3>Docker Local (application-docker-local.yml)</h3>
+        <p>Services accessed via <code>host.docker.internal</code> for Docker-to-Host communication on macOS/Windows.</p>
+
+        <h3>Docker Deployment (application-docker-deployment.yml)</h3>
+        <p>Services accessed via Kubernetes service names for container networking in production environments.</p>
+
+        <h2>📊 Monitoring & Observability</h2>
+
+        <ul class="feature-list">
+            <li><strong>Health Checks:</strong> Available at <code>/actuator/health</code></li>
+            <li><strong>Gateway Routes:</strong> Inspect active routes at <code>/actuator/gateway/routes</code></li>
+            <li><strong>Application Info:</strong> Service metadata at <code>/actuator/info</code></li>
+            <li><strong>Docker Health Check:</strong> Automated curl to health endpoint every 30 seconds</li>
+        </ul>
+
+        <h2>🚀 Deployment</h2>
+
+        <h3>Multi-Stage Docker Build</h3>
+
+        <div class="info-box">
+            <strong>Stage 1 - Builder:</strong>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li>Maven 3.9.5 with Java 21</li>
+                <li>Installs parent POM dependencies</li>
+                <li>Compiles and packages JAR (tests skipped)</li>
+            </ul>
+
+            <strong style="display: block; margin-top: 15px;">Stage 2 - Runtime:</strong>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li>Eclipse Temurin JRE 21 Alpine (minimal footprint)</li>
+                <li>Non-root user: spring:spring</li>
+                <li>JVM optimizations: container support, 75% memory limit</li>
+                <li>Profile: docker-deployment</li>
+            </ul>
+        </div>
+
+        <h3>Environment Variables</h3>
+        <ul class="feature-list">
+            <li><code>JWT_SECRET</code> - Secret key for JWT signature verification (min 256-bit)</li>
+            <li><code>CONTACT_API_X_API_KEY</code> - API key for external contact service</li>
+            <li><code>API_GATEWAY_HOST</code> - Gateway hostname for Docker environments</li>
+        </ul>
+
+        <h2>🎨 Key Features & Benefits</h2>
+
+        <ul class="feature-list">
+            <li><strong>Centralized Security:</strong> Single point for authentication and authorization logic</li>
+            <li><strong>Service Abstraction:</strong> Clients interact with one endpoint, not multiple services</li>
+            <li><strong>Reactive Architecture:</strong> Non-blocking I/O for high concurrency and low resource usage</li>
+            <li><strong>Flexible Routing:</strong> Programmatic route definition with dynamic URI injection</li>
+            <li><strong>Context Propagation:</strong> Seamless user context forwarding to downstream services</li>
+            <li><strong>CORS Management:</strong> Centralized CORS configuration with header deduplication</li>
+            <li><strong>Video Streaming Support:</strong> Special token handling for HLS/DASH media players</li>
+            <li><strong>Multi-Environment:</strong> Profile-based configuration for dev, staging, and production</li>
+            <li><strong>Error Standardization:</strong> Consistent JSON error responses across all routes</li>
+            <li><strong>Health Monitoring:</strong> Built-in actuator endpoints for service health checks</li>
+            <li><strong>TUS Protocol Support:</strong> CORS configuration for resumable uploads</li>
+            <li><strong>Production Ready:</strong> Docker containerization with health checks and JVM tuning</li>
+        </ul>
+
+        <h2>📝 Configuration Summary</h2>
+
+        <table class="route-table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Server Port</td>
+                    <td>8080</td>
+                </tr>
+                <tr>
+                    <td>Java Version</td>
+                    <td>21</td>
+                </tr>
+                <tr>
+                    <td>Spring Boot Version</td>
+                    <td>3.3.4</td>
+                </tr>
+                <tr>
+                    <td>Spring Cloud Version</td>
+                    <td>2023.0.3</td>
+                </tr>
+                <tr>
+                    <td>Web Application Type</td>
+                    <td>Reactive (WebFlux)</td>
+                </tr>
+                <tr>
+                    <td>JWT Algorithm</td>
+                    <td>HS256 (HMAC SHA256)</td>
+                </tr>
+                <tr>
+                    <td>Token Grace Period</td>
+                    <td>300 seconds</td>
+                </tr>
+                <tr>
+                    <td>CORS Allowed Origins</td>
+                    <td>* (all)</td>
+                </tr>
+                <tr>
+                    <td>Active Profile</td>
+                    <td>local (configurable)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🔄 Request/Response Flow Example</h2>
+
+        <div class="security-flow">
+            <h4>Typical Authenticated Request:</h4>
+            <div class="security-step">
+                <strong>1. Client Request:</strong><br>
+                <code>GET /api/photos/12345</code><br>
+                <code>Authorization: Bearer eyJhbGc...</code>
+            </div>
+            <div class="security-step">
+                <strong>2. Gateway Receives:</strong><br>
+                Incoming request at port 8080
+            </div>
+            <div class="security-step">
+                <strong>3. CORS Filter:</strong><br>
+                Handles pre-flight, adds CORS headers
+            </div>
+            <div class="security-step">
+                <strong>4. Auth Filter:</strong><br>
+                Extracts & validates JWT → Injects X-User-Id, X-Session-Id, X-User-Role headers
+            </div>
+            <div class="security-step">
+                <strong>5. Route Matching:</strong><br>
+                Matches <code>photos-service</code> route
+            </div>
+            <div class="security-step">
+                <strong>6. Forward to Service:</strong><br>
+                <code>GET http://photos-service:8082/api/photos/12345</code><br>
+                With injected security headers
+            </div>
+            <div class="security-step">
+                <strong>7. Service Response:</strong><br>
+                Returns photo data
+            </div>
+            <div class="security-step">
+                <strong>8. Client Receives:</strong><br>
+                Gateway forwards response with CORS headers
+            </div>
+        </div>
+
+        <h2>📌 Best Practices Implemented</h2>
+
+        <ul class="feature-list">
+            <li>Programmatic route configuration for runtime flexibility</li>
+            <li>Global filter pattern for centralized security policy</li>
+            <li>Header-based context propagation instead of token forwarding</li>
+            <li>Multi-environment configuration management</li>
+            <li>Reactive programming for scalability</li>
+            <li>Grace period for JWT expiration to handle clock skew</li>
+            <li>AntPathMatcher for flexible path pattern matching</li>
+            <li>Health checks and monitoring endpoints</li>
+            <li>Docker multi-stage builds for optimized images</li>
+            <li>Non-root container execution for security</li>
+            <li>Structured error responses with timestamps</li>
+        </ul>
+
+        <div class="info-box" style="margin-top: 40px;">
+            <strong>Documentation Version:</strong> 1.0<br>
+            <strong>Last Updated:</strong> November 2024<br>
+            <strong>Architecture Pattern:</strong> API Gateway with Reactive Programming<br>
+            <strong>Security Model:</strong> JWT-based Authentication with Context Propagation
+        </div>
+    </div>
+</body>
+</html>
