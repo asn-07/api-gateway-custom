@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: local # change to docker for building docker image
+  application:
+    name: photos-api-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "OPTIONS,GET,POST,PATCH,HEAD,DELETE,PUT"
+            allowedHeaders: "Tus-Resumable,Upload-Length,Upload-Offset,Upload-Metadata,Content-Type,*"
+            exposedHeaders: "Location,Upload-Offset,Upload-Length,Tus-Resumable,*"
+            allowCredentials: true
+      discovery:
+        locator:
+          enabled: false
+
+  jackson:
+    mapper:
+      accept-case-insensitive-enums: true      #Allows case insensitive enum deserialization
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+googlephotos:
+  jwt:
+    secret: ${JWT_SECRET:photos-backend-2025@12100183nzbbah-ajdhdbcxkjZAAHahaQo012100183nzbbah12100183nzbbah}  # Load from env var; must be at least 256 bits for HS256
+    expiration-grace: 300  # Seconds grace for clock skew
+
+gateway:
+  public-routes:  # List of routes to bypass token verification
+    - /api/auth/admin-sign-up
+    - /api/auth/login
+    - /api/auth/refresh-token
+
+contact:
+  x_api_key: ${CONTACT_API_X_API_KEY:6cf3c4bf-2fcf-421f-9553-4571da94751a}  # Load from env var

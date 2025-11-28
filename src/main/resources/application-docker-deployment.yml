@@ -1,0 +1,22 @@
+auth:
+  service:
+    uri: http://photos-auth-service:8080
+
+asset:
+  service:
+    uri: http://photos-asset-service:8080
+    v2:
+      uri: http://photos-asset-service-v2:8080 # New v2 asset service chunking
+
+search:
+  service:
+    uri: http://photos-search-service:8080
+
+album:
+  timeline:
+    service:
+      uri: http://photos-album-timeline-service:8080
+
+contact:
+  service:
+    uri: https://contact-api-vzcloud-poc.apps.ocp-stg.perryman.svcs.verizon.com

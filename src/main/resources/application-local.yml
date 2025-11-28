@@ -1,0 +1,43 @@
+auth:
+  service:
+    uri: http://localhost:8081
+
+asset:
+  service:
+    uri: http://localhost:8082
+    v2:
+      uri: http://localhost:8091
+
+search:
+  service:
+    uri: http://localhost:8087
+
+contact:
+  service:
+    uri: https://contact-api-vzcloud-poc.apps.ocp-stg.perryman.svcs.verizon.com
+
+#sharing:
+#  service:
+#    uri: http://localhost:8084
+#
+#library:
+#  service:
+#    uri: http://localhost:8085
+#
+#metadata:
+#  service:
+#    uri: http://localhost:8086
+#
+#media:
+#  processing:
+#    service:
+#      uri: http://localhost:8087
+#
+#thumbnail:
+#  service:
+#    uri: http://localhost:8087
+
+album:
+  timeline:
+    service:
+      uri: http://localhost:8083

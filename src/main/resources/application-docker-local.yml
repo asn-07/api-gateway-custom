@@ -1,0 +1,18 @@
+auth:
+  service:
+    uri: http://host.docker.internal:8081
+
+asset:
+  service:
+    uri: http://host.docker.internal:8082
+    v2:
+      uri: http://host.docker.internal:8091 # New v2 asset service chunking
+
+search:
+  service:
+    uri: http://host.docker.internal:8087
+
+album:
+  timeline:
+    service:
+      uri: http://host.docker.internal:8083
